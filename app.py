@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 import math
 import logging
+import os
 
 app = Flask(__name__)
 
@@ -30,6 +31,8 @@ def is_perfect(n):
 
 def is_armstrong(n):
     """Check if a number is an Armstrong number."""
+    if n < 0:
+        return False  # Armstrong numbers are usually positive
     digits = [int(d) for d in str(n)]
     power = len(digits)
     return sum(d ** power for d in digits) == n
@@ -41,7 +44,7 @@ def get_fun_fact(n):
         if response.status_code == 200:
             return response.json().get("text", "No fun fact available")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching fun fact: {e}")
+        logging.error(f"Failed to fetch fun fact for {n}: {e}")
         return "No fun fact available"
     return "No fun fact available"
 
@@ -49,10 +52,13 @@ def get_fun_fact(n):
 def classify_number():
     number_str = request.args.get('number')
 
+    if not number_str:
+        return jsonify({"error": "Missing 'number' parameter"}), 400
+
     try:
         number = int(number_str)
     except (ValueError, TypeError):
-        return jsonify({"number": number_str, "error": "Invalid input"}), 400
+        return jsonify({"error": f"Invalid input '{number_str}'. Please provide an integer."}), 400
 
     properties = []
     if is_armstrong(number):
@@ -71,5 +77,5 @@ def classify_number():
     return jsonify(result), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug_mode)
