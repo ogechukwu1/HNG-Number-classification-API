@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 import requests
 import math
+import logging
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 def is_prime(n):
     """Check if a number is prime."""
@@ -14,10 +18,15 @@ def is_prime(n):
     return True
 
 def is_perfect(n):
-    """Check if a number is a perfect number."""
+    """Check if a number is a perfect number (optimized)."""
     if n < 1:
         return False
-    return sum(i for i in range(1, n) if n % i == 0) == n
+    divisors = {1}
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            divisors.add(i)
+            divisors.add(n // i)
+    return sum(divisors) == n
 
 def is_armstrong(n):
     """Check if a number is an Armstrong number."""
@@ -28,22 +37,23 @@ def is_armstrong(n):
 def get_fun_fact(n):
     """Fetch a fun fact from the Numbers API."""
     try:
-        response = requests.get(f"http://numbersapi.com/{n}/math?json")
+        response = requests.get(f"http://numbersapi.com/{n}/math?json", timeout=5)
         if response.status_code == 200:
             return response.json().get("text", "No fun fact available")
-    except:
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching fun fact: {e}")
         return "No fun fact available"
     return "No fun fact available"
 
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
-    number = request.args.get('number')
+    number_str = request.args.get('number')
 
-    if number is None or not number.isdigit():
-        return jsonify({"number": number, "error": True}), 400
+    try:
+        number = int(number_str)
+    except (ValueError, TypeError):
+        return jsonify({"number": number_str, "error": "Invalid input"}), 400
 
-    number = int(number)
-    
     properties = []
     if is_armstrong(number):
         properties.append("armstrong")
@@ -54,7 +64,7 @@ def classify_number():
         "is_prime": is_prime(number),
         "is_perfect": is_perfect(number),
         "properties": properties,
-        "digit_sum": sum(int(d) for d in str(number)),
+        "digit_sum": sum(int(d) for d in str(abs(number))),  # Handle negative numbers
         "fun_fact": get_fun_fact(number)
     }
 
@@ -62,3 +72,4 @@ def classify_number():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
