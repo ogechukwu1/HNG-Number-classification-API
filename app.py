@@ -1,81 +1,78 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import requests
-import math
-import logging
-import os
 
-app = Flask(__name__)
+app = FastAPI()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def is_prime(n):
-    """Check if a number is prime."""
+# Helper functions
+def is_prime(n: int) -> bool:
     if n < 2:
         return False
-    for i in range(2, int(math.sqrt(n)) + 1):
+    for i in range(2, int(n ** 0.5) + 1):
         if n % i == 0:
             return False
     return True
 
-def is_perfect(n):
-    """Check if a number is a perfect number (optimized)."""
-    if n < 1:
-        return False
-    divisors = {1}
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            divisors.add(i)
-            divisors.add(n // i)
-    return sum(divisors) == n
+def is_perfect(n: int) -> bool:
+    return sum(i for i in range(1, n) if n % i == 0) == n
 
-def is_armstrong(n):
-    """Check if a number is an Armstrong number."""
-    if n < 0:
-        return False  # Armstrong numbers are usually positive
+def is_armstrong(n: int) -> bool:
     digits = [int(d) for d in str(n)]
     power = len(digits)
     return sum(d ** power for d in digits) == n
 
-def get_fun_fact(n):
-    """Fetch a fun fact from the Numbers API."""
+def get_fun_fact(n: int) -> str:
+    url = f"http://numbersapi.com/{n}/math"
     try:
-        response = requests.get(f"http://numbersapi.com/{n}/math?json", timeout=5)
-        if response.status_code == 200:
-            return response.json().get("text", "No fun fact available")
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to fetch fun fact for {n}: {e}")
-        return "No fun fact available"
-    return "No fun fact available"
+        response = requests.get(url, timeout=3)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.Timeout:
+        return "The request to NumbersAPI timed out."
+    except requests.exceptions.HTTPError:
+        return "Could not retrieve fact due to a server error."
+    except requests.exceptions.RequestException:
+        return "Fun fact unavailable."
 
-@app.route('/api/classify-number', methods=['GET'])
-def classify_number():
-    number_str = request.args.get('number')
+# Endpoints
+@app.get("/")
+def root():
+    return {"message": "Number Classification API is running!"}
 
-    if not number_str:
-        return jsonify({"error": "Missing 'number' parameter"}), 400
-
-    try:
-        number = int(number_str)
-    except (ValueError, TypeError):
-        return jsonify({"error": f"Invalid input '{number_str}'. Please provide an integer."}), 400
-
-    properties = []
-    if is_armstrong(number):
+@app.get("/api/classify-number")
+def classify_number(number: int = Query(..., description="The number to classify")):
+    properties = ["even" if number % 2 == 0 else "odd"]
+    
+    armstrong_check = is_armstrong(number)
+    if armstrong_check:
         properties.append("armstrong")
-    properties.append("odd" if number % 2 else "even")
 
+    fun_fact = get_fun_fact(number)
+    
+    # If Armstrong, override fun_fact with explanation
+    if armstrong_check:
+        digits = [int(d) for d in str(number)]
+        power = len(digits)
+        fun_fact = f"{number} is an Armstrong number because " + " + ".join(f"{d}^{power}" for d in digits) + f" = {number}"
+    
     result = {
         "number": number,
         "is_prime": is_prime(number),
         "is_perfect": is_perfect(number),
         "properties": properties,
-        "digit_sum": sum(int(d) for d in str(abs(number))),  # Handle negative numbers
-        "fun_fact": get_fun_fact(number)
+        "digit_sum": sum(int(digit) for digit in str(number)),
+        "fun_fact": fun_fact
     }
 
-    return jsonify(result), 200
+    return result
 
-if __name__ == '__main__':
-    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
-    app.run(debug=debug_mode)
