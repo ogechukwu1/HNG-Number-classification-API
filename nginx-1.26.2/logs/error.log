@@ -1,3 +1,5 @@
 2025/02/05 20:02:46 [error] 14720#18724: *2 CreateFile() "C:\Users\SUNSHINE\Documents\Number-classification-API\nginx-1.26.2/html/favicon.ico" failed (2: The system cannot find the file specified), client: 127.0.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "127.0.0.1", referrer: "http://127.0.0.1/"
 2025/02/05 20:18:57 [notice] 13196#15468: signal process started
 2025/02/05 20:30:46 [notice] 10316#8816: signal process started
+2025/02/05 20:50:20 [notice] 18588#1536: signal process started
+2025/02/05 21:12:32 [notice] 2192#10636: signal process started
