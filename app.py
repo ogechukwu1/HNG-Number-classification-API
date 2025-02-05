@@ -9,6 +9,11 @@ app = Flask(__name__)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# Welcome Route for Stage 0
+@app.route('/')
+def welcome():
+    return "Welcome to DevOps Stage 0"
+
 def is_prime(n):
     """Check if a number is prime."""
     if n < 2:
