@@ -9,6 +9,14 @@
 I'll walk you through the process of building and deploying a Number Classification API using Flask on Render. I'll also share the challenges I faced during deployment and how I resolved them. 
 
 
+Technologies Used
+
+- Python
+- Flask
+- Requests
+- Render (Deployment)
+
+
 
 __SETTING UP THE PROJECT__
 
@@ -279,34 +287,84 @@ Throughout this journey, I gained hands on experience in deploying APIs, address
 
 
 
+After submitting, I encountered the following error, and here's how I resolved it:
+
+
+![](./images/19.png)
+
+
+__Changes Made__
+
+NGINX Configuration (nginx.conf)
+
+Configured NGINX to proxy requests to the Flask app, which runs on http://127.0.0.1:5000.
+
+The relevant section in nginx.conf:
+
+```
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+```
+
+
+__Dockerfile__
+
+I Updated the Dockerfile to install both NGINX and Flask in a single container.
+
+The Dockerfile installs the necessary dependencies and configures both Flask and NGINX:
+
+```
+FROM python:3.8-slim
+
+# Install NGINX
+RUN apt-get update && apt-get install -y nginx
+
+# Install Flask
+RUN pip install Flask requests
+
+# Copy Flask app and NGINX configuration
+COPY . /app
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose ports
+EXPOSE 80 5000
+
+# Start NGINX and Flask
+CMD service nginx start && python /app/app.py
+
+```
+
+
+__challenges and Solutions__
+
+
+nginx.conf" file not found
+
+__Error:__ NGINX couldn’t find the nginx.conf file, which caused the command nginx -t to fail.
+
+__Solution:__ Verify the file path for nginx.conf is correct. By default, NGINX expects this file to be located in C:\nginx\conf\nginx.conf on Windows, so ensure the configuration file is placed in the right directory.
 
 
 
 
+NGINX Server Not Detected After Deployment
 
+__Error:__ After deploying the app to Render, the NGINX server was not detected.
 
+__Solution:__ Ensure that both NGINX and Flask are running within the same Docker container. The updated Dockerfile includes the command to start both services:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+`CMD service nginx start && python /app/app.py`
 
 
 
