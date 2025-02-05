@@ -1,26 +1,12 @@
 # HNG-Number-classification-API
 
 
-## Deploying a Number Classification API on Render: Challenges and Solutions
+## Deploying a Number Classification API on Render
 
 
 ### Introduction
 
 I'll walk you through the process of building and deploying a Number Classification API using Flask on Render. I'll also share the challenges I faced during deployment and how I resolved them. 
-
-__Project Structure__
-
-```
-HNG-Number-classification-API/
-│-- app.py
-│-- requirements.txt
-│-- README.md
-│-- .gitignore
-│-- runtime.txt
-│-- templates/
-│-- static/
-```
-
 
 
 
