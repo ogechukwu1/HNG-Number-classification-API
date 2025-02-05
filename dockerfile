@@ -15,3 +15,4 @@ EXPOSE 80 5000
 
 # Start NGINX and Flask
 CMD service nginx start && python /app/app.py
+
