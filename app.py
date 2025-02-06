@@ -1,38 +1,50 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS  # Import CORS
-from utils import is_prime, is_perfect, is_armstrong, get_digit_sum
+from flask import Flask, request, jsonify
+import requests
+import math
 
 app = Flask(__name__)
 
-# Enable CORS for all routes and all domains
-CORS(app)
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
 
-@app.route('/')
-def home():
-    return 'Welcome to the Number Classification API!'
+def is_armstrong(n):
+    digits = list(map(int, str(n)))
+    power = len(digits)
+    return sum(d ** power for d in digits) == n
+
+def get_fun_fact(n):
+    url = f"http://numbersapi.com/{n}/math"
+    response = requests.get(url)
+    return response.text if response.status_code == 200 else "No fun fact available."
 
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
-    try:
-        number = int(request.args.get('number'))
-        
-        # Call the classification functions and store results
-        prime_result = is_prime(number)
-        perfect_result = is_perfect(number)
-        armstrong_result = is_armstrong(number)
-        digit_sum_result = get_digit_sum(number)
+    num = request.args.get('number')
 
-        # Return results in a JSON response
-        return jsonify({
-            'number': number,
-            'is_prime': prime_result,
-            'is_perfect': perfect_result,
-            'is_armstrong': armstrong_result,
-            'digit_sum': digit_sum_result
-        }), 200
-        
-    except ValueError:
-        return jsonify({'error': 'Invalid input, please provide a valid integer.'}), 400
+    if not num or not num.isdigit():
+        return jsonify({"number": num, "error": True}), 400
+
+    num = int(num)
+    properties = ["odd" if num % 2 else "even"]
+    
+    if is_armstrong(num):
+        properties.insert(0, "armstrong")
+
+    response = {
+        "number": num,
+        "is_prime": is_prime(num),
+        "is_perfect": num == sum(i for i in range(1, num) if num % i == 0),
+        "properties": properties,
+        "digit_sum": sum(int(digit) for digit in str(num)),
+        "fun_fact": get_fun_fact(num)
+    }
+    
+    return jsonify(response), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
