@@ -31,8 +31,7 @@ def get_fun_fact(n):
         response = requests.get(f"http://numbersapi.com/{n}/math?json")
         if response.status_code == 200:
             return response.json().get("text", "No fun fact available")
-    except Exception as e:
-        print(f"Error fetching fun fact: {e}")
+    except:
         return "No fun fact available"
     return "No fun fact available"
 
@@ -40,28 +39,50 @@ def get_fun_fact(n):
 def classify_number():
     number = request.args.get('number')
 
-    if number is None or not number.isdigit():
-        return jsonify({"number": number, "error": True}), 400
+    if number is None:
+        return jsonify({"error": "No number provided"}), 400
 
-    number = int(number)
-    
-    properties = []
-    if is_armstrong(number):
-        properties.append("armstrong")
-    properties.append("odd" if number % 2 else "even")
+    try:
+        # Try to convert to a float first to allow negative and decimal numbers
+        number = float(number)
+        
+        # Now check for valid number types
+        if number.is_integer():
+            number = int(number)  # Convert to integer if it's a valid integer
+            
+        if number < 0:
+            # You can decide if you want to include handling for negative numbers or not
+            # In this case, we will proceed even if the number is negative
+            properties = []
+            if is_armstrong(number):
+                properties.append("armstrong")
+            properties.append("odd" if number % 2 else "even")
+            result = {
+                "number": number,
+                "is_prime": is_prime(number),
+                "is_perfect": is_perfect(number),
+                "properties": properties,
+                "digit_sum": sum(int(d) for d in str(abs(number))),
+                "fun_fact": get_fun_fact(number)
+            }
+            return jsonify(result), 200
+        else:
+            properties = []
+            if is_armstrong(number):
+                properties.append("armstrong")
+            properties.append("odd" if number % 2 else "even")
+            result = {
+                "number": number,
+                "is_prime": is_prime(number),
+                "is_perfect": is_perfect(number),
+                "properties": properties,
+                "digit_sum": sum(int(d) for d in str(abs(number))),
+                "fun_fact": get_fun_fact(number)
+            }
+            return jsonify(result), 200
 
-    result = {
-        "number": number,
-        "is_prime": is_prime(number),
-        "is_perfect": is_perfect(number),
-        "properties": properties,
-        "digit_sum": sum(int(d) for d in str(number)),
-        "fun_fact": get_fun_fact(number)
-    }
-
-    return jsonify(result), 200
+    except ValueError:
+        return jsonify({"error": "Invalid number format"}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
