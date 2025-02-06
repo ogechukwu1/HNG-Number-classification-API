@@ -31,32 +31,25 @@ def get_fun_fact(n):
         response = requests.get(f"http://numbersapi.com/{n}/math?json")
         if response.status_code == 200:
             return response.json().get("text", "No fun fact available")
-    except:
+    except Exception as e:
+        print(f"Error fetching fun fact: {e}")
         return "No fun fact available"
     return "No fun fact available"
 
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
-    # Get the 'number' query parameter from the request
     number = request.args.get('number')
 
-    # Validate that the number is provided and is a valid integer
     if number is None or not number.isdigit():
-        return jsonify({"error": "Invalid input. Please provide a valid number."}), 400
+        return jsonify({"number": number, "error": True}), 400
 
     number = int(number)
     
-    # Initialize an empty list to store the properties of the number
     properties = []
-    
-    # Check if the number is an Armstrong number
     if is_armstrong(number):
         properties.append("armstrong")
-    
-    # Check if the number is even or odd
     properties.append("odd" if number % 2 else "even")
-    
-    # Prepare the result to return as a JSON response
+
     result = {
         "number": number,
         "is_prime": is_prime(number),
@@ -70,4 +63,5 @@ def classify_number():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
