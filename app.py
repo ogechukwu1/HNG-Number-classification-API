@@ -8,60 +8,62 @@ CORS(app)
 
 # Helper functions to determine properties of a number
 def is_prime(n):
-    if n <= 1 or not float(n).is_integer():
-        return False  # Non-integer and numbers ≤1 are not prime
-    n = int(n)  # Convert to integer for proper calculations
+    if n <= 1:
+        return False
     for i in range(2, int(n ** 0.5) + 1):
         if n % i == 0:
             return False
     return True
 
 def is_perfect(n):
-    if n <= 0 or not float(n).is_integer():
-        return False  # Non-integer and negative numbers are not perfect
-    n = int(n)
+    if n <= 0:
+        return False
     divisors_sum = sum(i for i in range(1, n) if n % i == 0)
     return divisors_sum == n
 
 def is_armstrong(n):
-    if not float(n).is_integer():
-        return False  # Only integers can be Armstrong numbers
-    n = int(n)
-    digits = [int(digit) for digit in str(abs(n))]  # Handle absolute value
-    return sum(d ** len(digits) for d in digits) == n
+    if n < 0:
+        return False
+    digits = [int(digit) for digit in str(abs(n))]
+    return sum(d ** len(digits) for d in digits) == abs(n)
 
 def digit_sum(n):
-    return sum(int(digit) for digit in str(abs(int(n))))  # Convert float to int for digit sum
+    return sum(int(digit) for digit in str(abs(n)))
 
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
+    number_str = request.args.get('number')
+
+    # Handle missing number
+    if number_str is None:
+        return jsonify({"number": None, "error": "Missing number parameter"}), 400
+
+    # Try to parse the number (handle integers and floats)
     try:
-        number = float(request.args.get('number'))  # Accepts both integer and floating-point values
-    except (ValueError, TypeError):
-        return jsonify({"error": "Invalid input, please provide a valid number"}), 400
+        number = float(number_str)
+        if number.is_integer():
+            number = int(number)  # Convert float-like integers to int
+    except ValueError:
+        return jsonify({"number": number_str, "error": "Invalid input"}), 400
 
-    # Determine properties
-    prime = is_prime(number)
-    perfect = is_perfect(number)
-    armstrong = is_armstrong(number)
-    odd = int(number) % 2 != 0 if number.is_integer() else None  # Odd/Even only for integers
+    # Calculate properties
+    prime = is_prime(number) if isinstance(number, int) else False
+    perfect = is_perfect(number) if isinstance(number, int) else False
+    armstrong = is_armstrong(number) if isinstance(number, int) else False
+    odd = number % 2 != 0 if isinstance(number, int) else None
 
-    # Prepare properties list
     properties = []
     if armstrong:
         properties.append("armstrong")
     if odd is not None:
         properties.append("odd" if odd else "even")
 
-    # Fetch fun fact only for integers
+    # Fetch the fun fact from Numbers API (only for integers)
     fun_fact = None
-    if number.is_integer():
-        try:
-            fun_fact_response = requests.get(f"http://numbersapi.com/{int(number)}?json")
-            if fun_fact_response.status_code == 200:
-                fun_fact = fun_fact_response.json().get('text', f"No fun fact available for {int(number)}")
-        except requests.exceptions.RequestException:
-            fun_fact = "Could not retrieve fun fact"
+    if isinstance(number, int):
+        fun_fact_response = requests.get(f"http://numbersapi.com/{number}?json")
+        if fun_fact_response.status_code == 200:
+            fun_fact = fun_fact_response.json().get('text', f"No fun fact available for {number}")
 
     # Prepare response
     response = {
