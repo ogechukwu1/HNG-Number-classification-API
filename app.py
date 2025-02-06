@@ -11,39 +11,26 @@ CORS(app)
 def home():
     return 'Welcome to the Number Classification API!'
 
-@app.route('/is_prime', methods=['GET'])
-def check_prime():
+@app.route('/api/classify-number', methods=['GET'])
+def classify_number():
     try:
         number = int(request.args.get('number'))
-        result = is_prime(number)
-        return jsonify({'number': number, 'is_prime': result}), 200
-    except ValueError:
-        return jsonify({'error': 'Invalid input, please provide a valid integer.'}), 400
+        
+        # Call the classification functions and store results
+        prime_result = is_prime(number)
+        perfect_result = is_perfect(number)
+        armstrong_result = is_armstrong(number)
+        digit_sum_result = get_digit_sum(number)
 
-@app.route('/is_perfect', methods=['GET'])
-def check_perfect():
-    try:
-        number = int(request.args.get('number'))
-        result = is_perfect(number)
-        return jsonify({'number': number, 'is_perfect': result}), 200
-    except ValueError:
-        return jsonify({'error': 'Invalid input, please provide a valid integer.'}), 400
-
-@app.route('/is_armstrong', methods=['GET'])
-def check_armstrong():
-    try:
-        number = int(request.args.get('number'))
-        result = is_armstrong(number)
-        return jsonify({'number': number, 'is_armstrong': result}), 200
-    except ValueError:
-        return jsonify({'error': 'Invalid input, please provide a valid integer.'}), 400
-
-@app.route('/digit_sum', methods=['GET'])
-def digit_sum():
-    try:
-        number = int(request.args.get('number'))
-        result = get_digit_sum(number)
-        return jsonify({'number': number, 'digit_sum': result}), 200
+        # Return results in a JSON response
+        return jsonify({
+            'number': number,
+            'is_prime': prime_result,
+            'is_perfect': perfect_result,
+            'is_armstrong': armstrong_result,
+            'digit_sum': digit_sum_result
+        }), 200
+        
     except ValueError:
         return jsonify({'error': 'Invalid input, please provide a valid integer.'}), 400
 
