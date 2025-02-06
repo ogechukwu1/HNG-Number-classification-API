@@ -258,7 +258,7 @@ The API is live at: https://hng-number-classification-api-m4me.onrender.com
 
 ![](./images/18.png)
 
-
+![](./images/17.png)
 
 
 __CONCLUSION__
