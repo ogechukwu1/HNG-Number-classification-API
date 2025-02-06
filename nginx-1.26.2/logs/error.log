@@ -3,3 +3,12 @@
 2025/02/05 20:30:46 [notice] 10316#8816: signal process started
 2025/02/05 20:50:20 [notice] 18588#1536: signal process started
 2025/02/05 21:12:32 [notice] 2192#10636: signal process started
+2025/02/05 21:42:14 [notice] 7952#772: signal process started
+2025/02/05 21:43:14 [notice] 11068#1564: signal process started
+2025/02/05 21:47:34 [alert] 7428#19176: OpenEvent("ngx_master_12112") failed (2: The system cannot find the file specified)
+2025/02/05 21:47:34 [alert] 6416#1164: OpenEvent("ngx_master_8344") failed (2: The system cannot find the file specified)
+2025/02/05 21:47:34 [alert] 16256#13884: OpenEvent("ngx_master_15748") failed (2: The system cannot find the file specified)
+2025/02/06 11:22:12 [notice] 17512#6552: signal process started
+2025/02/06 11:22:12 [error] 17512#6552: OpenEvent("Global\ngx_reload_9956") failed (2: The system cannot find the file specified)
+2025/02/06 11:23:32 [notice] 18984#15736: signal process started
+2025/02/06 11:47:53 [error] 3548#11644: *1 CreateFile() "C:\Users\SUNSHINE\Documents\Number-classification-API\nginx-1.26.2/html/favicon.ico" failed (2: The system cannot find the file specified), client: 127.0.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "127.0.0.1", referrer: "http://127.0.0.1/"
