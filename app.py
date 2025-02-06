@@ -18,6 +18,7 @@ def is_prime(n):
 def is_perfect(n):
     if n <= 0:
         return False  # Handle non-positive numbers
+    n = int(n)  # Convert to an integer if n is a float
     divisors_sum = sum(i for i in range(1, n) if n % i == 0)
     return divisors_sum == n
 
