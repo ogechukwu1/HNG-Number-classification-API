@@ -53,70 +53,87 @@ pip install flask requests
 - Create a Python file `app.py` and add the following code:
 
 ```
+import os
 from flask import Flask, request, jsonify
 import requests
-import math
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
+# Helper functions to determine properties of a number
 def is_prime(n):
-    """Check if a number is prime."""
-    if n < 2:
+    if n <= 1:
         return False
-    for i in range(2, int(math.sqrt(n)) + 1):
+    for i in range(2, int(n ** 0.5) + 1):
         if n % i == 0:
             return False
     return True
 
 def is_perfect(n):
-    """Check if a number is a perfect number."""
-    if n < 1:
+    if n <= 0:
         return False
-    return sum(i for i in range(1, n) if n % i == 0) == n
+    divisors_sum = sum(i for i in range(1, n) if n % i == 0)
+    return divisors_sum == n
 
 def is_armstrong(n):
-    """Check if a number is an Armstrong number."""
-    digits = [int(d) for d in str(n)]
-    power = len(digits)
-    return sum(d ** power for d in digits) == n
+    if n < 0:
+        return False
+    digits = [int(digit) for digit in str(abs(n))]  # Handle negative numbers
+    return sum(d ** len(digits) for d in digits) == abs(n)
 
-def get_fun_fact(n):
-    """Fetch a fun fact from the Numbers API."""
-    try:
-        response = requests.get(f"http://numbersapi.com/{n}/math?json")
-        if response.status_code == 200:
-            return response.json().get("text", "No fun fact available")
-    except:
-        return "No fun fact available"
-    return "No fun fact available"
+def digit_sum(n):
+    return sum(int(digit) for digit in str(abs(n)))
 
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
-    number = request.args.get('number')
-
-    if number is None or not number.isdigit():
-        return jsonify({"number": number, "error": True}), 400
-
-    number = int(number)
+    number_str = request.args.get('number')
     
-    properties = []
-    if is_armstrong(number):
-        properties.append("armstrong")
-    properties.append("odd" if number % 2 else "even")
+    # Validate input
+    try:
+        number = float(number_str) if '.' in number_str else int(number_str)
+    except (ValueError, TypeError):
+        return jsonify({"number": number_str, "error": True, "message": "Invalid input"}), 400
 
-    result = {
+    # Determine properties
+    prime = is_prime(int(number))
+    perfect = is_perfect(int(number))
+    armstrong = is_armstrong(int(number))
+    odd = int(number) % 2 != 0
+
+    properties = []
+    if armstrong:
+        properties.append("armstrong")
+    if odd:
+        properties.append("odd")
+    else:
+        properties.append("even")
+
+    # Fetch fun fact (Handle API failure gracefully)
+    fun_fact = f"No fun fact available for {number}"
+    try:
+        response = requests.get(f"http://numbersapi.com/{int(number)}?json", timeout=5)
+        if response.status_code == 200:
+            fun_fact = response.json().get('text', fun_fact)
+    except requests.exceptions.RequestException:
+        pass  # Keep default fun fact message
+
+    # Prepare response
+    response = {
         "number": number,
-        "is_prime": is_prime(number),
-        "is_perfect": is_perfect(number),
+        "is_prime": prime,
+        "is_perfect": perfect,
         "properties": properties,
-        "digit_sum": sum(int(d) for d in str(number)),
-        "fun_fact": get_fun_fact(number)
+        "digit_sum": digit_sum(int(number)),
+        "fun_fact": fun_fact
     }
 
-    return jsonify(result), 200
+    return jsonify(response), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Render sets PORT automatically
+    debug_mode = os.environ.get("DEBUG", "False").lower() == "true"
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
 ```
 
 - Start the Flask server
@@ -166,20 +183,69 @@ To deploy on [Render](https://dashboard.render.com/), I needed to:
 - Create a requirements.txt file with all dependencies
 
 ```
+annotated-types==0.7.0
+anyio==4.8.0
 blinker==1.9.0
-certifi==2025.1.31
+boto3==1.26.137
+botocore==1.29.165
+certifi==2024.12.14
+cffi==1.17.1
 charset-normalizer==3.4.1
 click==8.1.8
 colorama==0.4.6
+contourpy==1.3.1
+cors==1.0.1
+cycler==0.12.1
+distlib==0.3.9
+fastapi==0.115.8
+filelock==3.17.0
 Flask==3.1.0
+Flask-Cors==5.0.0
+fonttools==4.55.3
+future==1.0.0
+gevent==24.11.1
+git-filter-repo==2.45.0
+greenlet==3.1.1
+gunicorn==23.0.0
+h11==0.14.0
 idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.5
+jmespath==1.0.1
+kiwisolver==1.4.8
 MarkupSafe==3.0.2
-requests==2.32.3
-urllib3==2.3.0
+matplotlib==3.10.0
+numpy==2.2.1
+packaging==24.2
+pandas==2.2.3
+pillow==11.1.0
+platformdirs==4.3.6
+pycparser==2.22
+pydantic==2.10.6
+pydantic_core==2.27.2
+pyparsing==3.2.1
+PySocks==1.7.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.0
+pytz==2024.2
+requests==2.28.2
+requests-file==2.1.0
+s3transfer==0.6.2
+schedule==1.2.2
+setuptools==75.8.0
+six==1.17.0
+sniffio==1.3.1
+starlette==0.45.3
+tldextract==5.1.3
+typing_extensions==4.12.2
+tzdata==2024.2
+urllib3==1.26.20
+uvicorn==0.34.0
+virtualenv==20.29.1
+waitress==3.0.2
 Werkzeug==3.1.3
-waitress==2.1.2
+zope.event==5.0
+zope.interface==7.2
 ```
 
 - Click "New Web Service" and connect my GitHub repository
