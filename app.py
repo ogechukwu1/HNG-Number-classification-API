@@ -2,9 +2,11 @@ import os
 from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
+
 app = Flask(__name__)
 CORS(app)
-# Helper functions to determine properties of a number
+
+# Helper functions
 def is_prime(n):
     if n <= 1:
         return False
@@ -12,50 +14,62 @@ def is_prime(n):
         if n % i == 0:
             return False
     return True
+
 def is_perfect(n):
     if n <= 0:
         return False  # Handle non-positive numbers
-    divisors_sum = sum(i for i in range(1, n) if n % i == 0)
-    return divisors_sum == n
+    return sum(i for i in range(1, n) if n % i == 0) == n
+
 def is_armstrong(n):
     if n < 0:
         return False
     digits = [int(digit) for digit in str(n)]
     return sum(d ** len(digits) for d in digits) == n
+
 def digit_sum(n):
     return sum(int(digit) for digit in str(abs(n)))
+
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
+    number_param = request.args.get('number')
+
+    if number_param is None:
+        return jsonify({"error": "Missing 'number' parameter"}), 400
+
     try:
-        number = int(request.args.get('number'))
-    except (ValueError, TypeError):
-        return jsonify({"number": "alphabet", "error": True}), 400
+        number = int(number_param)
+    except ValueError:
+        return jsonify({"error": "Invalid input. Please provide a valid number."}), 400
+
     # Calculate properties
-    prime = is_prime(number)
-    perfect = is_perfect(number)
-    armstrong = is_armstrong(number)
-    odd = number % 2 != 0
-    properties = []
-    if armstrong:
-        properties.append("armstrong")
-    if odd:
-        properties.append("odd")
-    else:
-        properties.append("even")
-    # Fetch the fun fact from Numbers API
-    fun_fact_response = requests.get(f"http://numbersapi.com/{number}?json")
-    fun_fact = fun_fact_response.json().get('text', f"No fun fact available for {number}")
-    # Prepare response
-    response = {
-        "number": number,
-        "is_prime": prime,
-        "is_perfect": perfect,
-        "properties": properties,
-        "digit_sum": digit_sum(number),
-        "fun_fact": fun_fact
+    properties = {
+        "is_prime": is_prime(number),
+        "is_perfect": is_perfect(number),
+        "is_armstrong": is_armstrong(number),
+        "is_odd": number % 2 != 0,
+        "digit_sum": digit_sum(number)
     }
-    return jsonify(response), 200
+    
+    properties["parity"] = "odd" if properties["is_odd"] else "even"
+
+    # Fetch fun fact (Handle API failure)
+    fun_fact = f"No fun fact available for {number}"
+    try:
+        response = requests.get(f"http://numbersapi.com/{number}?json", timeout=5)
+        if response.status_code == 200:
+            fun_fact = response.json().get('text', fun_fact)
+    except requests.RequestException:
+        pass  # Keep default fun fact
+
+    return jsonify({
+        "number": number,
+        **properties,
+        "fun_fact": fun_fact
+    }), 200
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.environ.get("DEBUG", "False").lower() == "true"
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+
 
